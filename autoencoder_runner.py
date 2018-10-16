@@ -41,6 +41,7 @@ def pre_process():
 def train(x_train, x_dev):
     avg_cost = 0.
     display_step = 0
+    n_samples = len(x_train)
 
     cae = ConvAutoEncoder(
         x_shape=x_shape,
@@ -60,9 +61,9 @@ def train(x_train, x_dev):
     for batch in batches:
         display_step += 1
         cost = cae.partial_fit(batch)
-        avg_cost += cost / FLAGS.batch_size
+        avg_cost += cost / n_samples * FLAGS.batch_size
         time_str = datetime.datetime.now().isoformat()
-        print("{}: step {}, avg_cost {:g}".format(
+        print("{}: step {}, avg_cost: {:g}".format(
             time_str, display_step, cost)
         )
     print("Total cost: " + str(cae.calc_total_cost(x_dev)))
@@ -71,6 +72,7 @@ def train(x_train, x_dev):
 def main(argv=None):
     x_train, k_train, x_dev, k_dev = pre_process()
     train(x_train, x_dev)
+
 
 if __name__ == '__main__':
     tf.app.run()

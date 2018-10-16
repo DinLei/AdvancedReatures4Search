@@ -17,6 +17,7 @@ class ConvAutoEncoder:
                  num_filters,
                  conv_layers=3,
                  pool_strides=1,
+                 num_channels=1,
                  active_func=tf.nn.relu,
                  learning_rate=0.001,
                  auto_encoder_units=100,
@@ -47,9 +48,7 @@ class ConvAutoEncoder:
         self.pool_shape_histories = [tuple(x_shape)]
 
         self.input_x = tf.placeholder(
-            tf.float32, [None, nrow, ncol, 1], name="inputs_")
-        self.output_y = tf.placeholder(
-            tf.float32, [None, nrow, ncol, 1], name="outputs_")
+            tf.float32, [None, nrow, ncol, num_channels], name="inputs_")
 
         self.last_hidden = self._encoder(self.input_x)
         self.reconstruction = self._decoder(self.last_hidden)

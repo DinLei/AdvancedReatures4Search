@@ -84,10 +84,14 @@ def time_series_gene(c_dim=60, data_file="data/nlp_products_time_series_dl"):
                 wish_uvs = [0] * (c_dim - len(wish_uvs)) + wish_uvs
                 cart_uvs = [0] * (c_dim - len(cart_uvs)) + cart_uvs
                 order_uvs = [0] * (c_dim - len(order_uvs)) + order_uvs
-            yield last_key, np.array([
-                click_uvs[-c_dim:], wish_uvs[-c_dim:],
-                cart_uvs[-c_dim:], order_uvs[-c_dim:]
-            ])
+            tmp = np.expand_dims(
+                np.array([
+                    click_uvs[-c_dim:], wish_uvs[-c_dim:],
+                    cart_uvs[-c_dim:], order_uvs[-c_dim:]
+                ]),
+                -1
+            )
+            yield last_key, tmp
             click_uvs.clear()
             wish_uvs.clear()
             cart_uvs.clear()
@@ -97,10 +101,14 @@ def time_series_gene(c_dim=60, data_file="data/nlp_products_time_series_dl"):
             counter += 1
         last_key = key
     if len(click_uvs) >= c_dim:
-        yield last_key, np.array([
-                    click_uvs[-c_dim:], wish_uvs[-c_dim:],
-                    cart_uvs[-c_dim:], order_uvs[-c_dim:]
-                ])
+        tmp = np.expand_dims(
+            np.array([
+                click_uvs[-c_dim:], wish_uvs[-c_dim:],
+                cart_uvs[-c_dim:], order_uvs[-c_dim:]
+            ]),
+            -1
+        )
+        yield last_key, tmp
     print("All time series data: {}...".format(counter+1))
 
 
