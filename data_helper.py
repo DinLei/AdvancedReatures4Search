@@ -71,18 +71,22 @@ def time_series_gene(c_dim=60, data_file="data/nlp_products_time_series_dl"):
     cart_uvs = []
     order_uvs = []
     for record in raw_data:
-        key = tuple(record[:3])
+        key = tuple(record[:2])
         click, wish, cart, order = record[-4:]
-        if key != last_key:
+        if key == last_key or last_key is None:
             click_uvs.append(click)
             wish_uvs.append(wish)
             cart_uvs.append(cart)
             order_uvs.append(order)
-            last_key = key
         else:
-            yield key, np.array([
-                click_uvs[:c_dim], wish_uvs[:c_dim],
-                cart_uvs[:c_dim], order_uvs[:c_dim]
+            if len(click_uvs) < c_dim:
+                click_uvs = [0] * (c_dim - len(click_uvs)) + click_uvs
+                wish_uvs = [0] * (c_dim - len(wish_uvs)) + wish_uvs
+                cart_uvs = [0] * (c_dim - len(cart_uvs)) + cart_uvs
+                order_uvs = [0] * (c_dim - len(order_uvs)) + order_uvs
+            yield last_key, np.array([
+                click_uvs[-c_dim:], wish_uvs[-c_dim:],
+                cart_uvs[-c_dim:], order_uvs[-c_dim:]
             ])
             click_uvs.clear()
             wish_uvs.clear()
@@ -91,8 +95,26 @@ def time_series_gene(c_dim=60, data_file="data/nlp_products_time_series_dl"):
             if counter % 1000 == 0:
                 print("Have completed time series data: {}...".format(counter))
             counter += 1
-    yield last_key, np.array([
-                click_uvs[:c_dim], wish_uvs[:c_dim],
-                cart_uvs[:c_dim], order_uvs[:c_dim]
-            ])
+        last_key = key
+    if len(click_uvs) >= c_dim:
+        yield last_key, np.array([
+                    click_uvs[-c_dim:], wish_uvs[-c_dim:],
+                    cart_uvs[-c_dim:], order_uvs[-c_dim:]
+                ])
     print("All time series data: {}...".format(counter+1))
+
+
+def batch_iter(data, batch_size, num_epochs, shuffle=True):
+    data = np.array(data)
+    data_size = len(data)
+    num_batches_per_epoch = int((data_size-1)/batch_size) + 1
+    for epoch in range(num_epochs):
+        if shuffle:
+            shuffle_indices = np.random.permutation(np.arange(data_size))
+            shuffled_data = data[shuffle_indices]
+        else:
+            shuffled_data = data
+        for batch_num in range(num_batches_per_epoch):
+            start_index = batch_num * batch_size
+            end_index = min((batch_num + 1) * batch_size, data_size)
+            yield shuffled_data[start_index:end_index]
