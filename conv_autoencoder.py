@@ -50,24 +50,33 @@ class ConvAutoEncoder:
         self.input_x = tf.placeholder(
             tf.float32, [None, nrow, ncol, num_channels], name="inputs_")
 
-        self.last_hidden = self._encoder(self.input_x)
-        self.reconstruction = self._decoder(self.last_hidden)
+        with tf.name_scope("encoding"):
+            self.last_hidden = self._encoder(self.input_x)
 
-        self.auto_encoder_vec = tf.layers.dense(
-            self.last_hidden, auto_encoder_units,
-            activation=active_func,
-            name="auto_encoder_vac"
-        )
+        with tf.name_scope("decoding"):
+            self.reconstruction = self._decoder(self.last_hidden)
 
-        self.cost = 0.5 * tf.reduce_sum(
-            tf.pow(
-                tf.subtract(
-                    self.reconstruction,
-                    self.input_x), 2.0
-            ),
-            name="cost"
-        )
-        self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
+        with tf.name_scope("get auto encoder"):
+            self.auto_encoder_vec = tf.layers.dense(
+                self.last_hidden, auto_encoder_units,
+                activation=active_func,
+                name="auto_encoder_vac"
+            )
+
+        with tf.name_scope("calculate cost"):
+            self.cost = 0.5 * tf.reduce_sum(
+                tf.pow(
+                    tf.subtract(
+                        self.reconstruction,
+                        self.input_x
+                    ),
+                    2.0
+                ),
+                name="cost"
+            )
+
+        with tf.name_scope("optimizer"):
+            self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
 
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
@@ -153,7 +162,7 @@ class ConvAutoEncoder:
         return recon
 
     def partial_fit(self, input_x):
-        cost, opt = self.sess.run(
+        cost, _ = self.sess.run(
             (self.cost, self.optimizer),
             feed_dict={self.input_x: input_x})
         return cost

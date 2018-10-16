@@ -39,8 +39,7 @@ def pre_process():
 
 
 def train(x_train, x_dev):
-    avg_cost = 0.
-    display_step = 0
+    display_step = 1
     n_samples = len(x_train)
 
     cae = ConvAutoEncoder(
@@ -52,20 +51,23 @@ def train(x_train, x_dev):
         )
     )
 
-    batches = batch_iter(
-        data=x_train,
-        batch_size=FLAGS.batch_size,
-        num_epochs=FLAGS.num_epochs
-    )
+    num_batches_per_epoch = int((n_samples - 1) / FLAGS.batch_size) + 1
+    for epoch in range(FLAGS.num_epochs):
+        avg_cost = 0.
+        shuffle_indices = np.random.permutation(np.arange(n_samples))
+        shuffled_data = x_train[shuffle_indices]
+        for batch_num in range(num_batches_per_epoch):
+            start_index = batch_num * FLAGS.batch_size
+            end_index = min((batch_num + 1) * FLAGS.batch_size, n_samples)
+            batch = shuffled_data[start_index:end_index]
+            cost = cae.partial_fit(batch)
+            avg_cost += cost / n_samples * FLAGS.batch_size
 
-    for batch in batches:
-        display_step += 1
-        cost = cae.partial_fit(batch)
-        avg_cost += cost / n_samples * FLAGS.batch_size
-        time_str = datetime.datetime.now().isoformat()
-        print("{}: step {}, avg_cost: {:g}".format(
-            time_str, display_step, cost)
-        )
+        if epoch % display_step == 0:
+            time_str = datetime.datetime.now().isoformat()
+            print("{} >>> \tepoch {},\tavg_cost {:.6f}".format(
+                time_str, epoch+1, avg_cost)
+            )
     print("Total cost: " + str(cae.calc_total_cost(x_dev)))
 
 
