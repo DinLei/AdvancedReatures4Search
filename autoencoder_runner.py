@@ -21,7 +21,7 @@ def pre_process():
     records = []
     for ele in data:
         keys.append(ele[0])
-        records.append(ele[1])
+        records.append(np.expand_dims(ele[1], -1))
     keys = np.array(keys)
     records = np.array(records)
 
@@ -61,14 +61,15 @@ def train(x_train, x_dev):
             end_index = min((batch_num + 1) * FLAGS.batch_size, n_samples)
             batch = shuffled_data[start_index:end_index]
             cost = cae.partial_fit(batch)
-            avg_cost += cost / n_samples * FLAGS.batch_size
+            avg_cost += cost / n_samples
 
         if epoch % display_step == 0:
             time_str = datetime.datetime.now().isoformat()
             print("{} >>> \tepoch {},\tavg_cost {:.6f}".format(
                 time_str, epoch+1, avg_cost)
             )
-    print("Total cost: " + str(cae.calc_total_cost(x_dev)))
+    print("\nThe dev examples average cost: {:.6f}".
+          format(cae.calc_total_cost(x_dev)/len(x_dev)))
 
 
 def main(argv=None):
